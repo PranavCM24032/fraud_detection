@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_file
 import joblib
 import pandas as pd
 from pathlib import Path
+import os
 
 app = Flask(__name__)
 BASE_DIR = Path(__file__).resolve().parent
@@ -38,4 +39,5 @@ def predict():
     })
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    debug = os.getenv("FLASK_DEBUG", "0") == "1"
+    app.run(debug=debug, host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
