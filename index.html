@@ -3,517 +3,471 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>FraudShield · Real-Time Fraud Detection</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<title>FraudShield · Financial Fraud Detection</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  :root {
-    --bg: #0a0e1a;
-    --card: rgba(20, 26, 44, 0.75);
-    --border: rgba(120, 140, 200, 0.15);
-    --text: #e6ebf5;
-    --muted: #8b95b5;
-    --primary: #4f7cff;
-    --success: #16d98a;
-    --danger: #ff4d6d;
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+  .fade-in { animation: fadeIn .35s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
-
-  body {
-    font-family: 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Background FX */
-  .bg-grid {
-    position: fixed; inset: 0;
-    background-image:
-      linear-gradient(rgba(80,120,255,.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(80,120,255,.05) 1px, transparent 1px);
-    background-size: 44px 44px;
-    z-index: -2;
-    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
-  }
-  .bg-glow {
-    position: fixed; width: 600px; height: 600px;
-    border-radius: 50%; filter: blur(120px);
-    opacity: .35; z-index: -1; pointer-events: none;
-  }
-  .glow-1 { top: -200px; left: -150px; background: #3b5bff; }
-  .glow-2 { bottom: -200px; right: -150px; background: #7c3bff; }
-
-  /* Navbar */
-  .navbar {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 22px 40px;
-    border-bottom: 1px solid var(--border);
-    backdrop-filter: blur(14px);
-    background: rgba(10,14,26,.55);
-    position: sticky; top: 0; z-index: 10;
-  }
-  .logo { display: flex; align-items: center; gap: 14px; }
-  .logo-mark {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: linear-gradient(135deg, #4f7cff, #7c3bff);
-    display: grid; place-items: center; color: white;
-    box-shadow: 0 8px 24px rgba(79,124,255,.4);
-  }
-  .logo-mark svg { width: 24px; height: 24px; }
-  .logo-text h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em; }
-  .logo-text span { font-size: .75rem; color: var(--muted); }
-  .status-pill {
-    display: flex; align-items: center; gap: 8px;
-    padding: 8px 16px; font-size: .8rem; font-weight: 500;
-    color: var(--success);
-    background: rgba(22,217,138,.1);
-    border: 1px solid rgba(22,217,138,.3);
-    border-radius: 999px;
-  }
-  .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--success);
-    box-shadow: 0 0 12px var(--success);
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
-
-  /* Layout */
-  .container {
-    flex: 1;
-    display: grid; grid-template-columns: 1.2fr 1fr;
-    gap: 28px; padding: 36px 40px;
-    max-width: 1400px; width: 100%; margin: 0 auto;
-  }
-
-  /* Card */
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 30px;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 20px 60px rgba(0,0,0,.35);
-    position: relative; overflow: hidden;
-  }
-  .card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(120,150,255,.6), transparent);
-  }
-  .card-header { margin-bottom: 26px; }
-  .card-header h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 6px; }
-  .card-header p { font-size: .85rem; color: var(--muted); }
-
-  /* Form */
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .field { display: flex; flex-direction: column; gap: 8px; }
-  .field label {
-    font-size: .78rem; font-weight: 500; color: var(--muted);
-    letter-spacing: .02em; text-transform: uppercase;
-  }
-  .field label small { text-transform: none; font-weight: 400; opacity: .7; }
-  .field input, .field select {
-    padding: 12px 14px; font-size: .92rem; font-family: inherit;
-    color: var(--text);
-    background: rgba(15,20,36,.85);
-    border: 1px solid var(--border);
-    border-radius: 10px; outline: none;
-    transition: all .2s ease;
-  }
-  .field select option { background: #0f1424; }
-  .field input:focus, .field select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(79,124,255,.15);
-    background: rgba(20,26,44,.9);
-  }
-  .field input::placeholder { color: #4d5673; }
-
-  /* Buttons */
-  .actions { display: flex; gap: 12px; margin-top: 26px; }
-  .btn-primary {
-    flex: 1; padding: 14px 20px;
-    font-size: .95rem; font-weight: 600; font-family: inherit;
-    color: white;
-    background: linear-gradient(135deg, #4f7cff, #6b3bff);
-    border: none; border-radius: 12px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    transition: all .25s ease;
-    box-shadow: 0 8px 24px rgba(79,124,255,.35);
-  }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(79,124,255,.5); }
-  .btn-primary:disabled { opacity: .7; cursor: wait; transform: none; }
-  .btn-ghost {
-    padding: 14px 22px; font-family: inherit; font-size: .92rem;
-    font-weight: 500; color: var(--muted);
-    background: transparent; border: 1px solid var(--border);
-    border-radius: 12px; cursor: pointer; transition: all .2s ease;
-  }
-  .btn-ghost:hover { color: var(--text); border-color: rgba(120,140,200,.4); }
-  .spinner {
-    width: 16px; height: 16px;
-    border: 2px solid rgba(255,255,255,.35);
-    border-top-color: white; border-radius: 50%;
-    animation: spin .8s linear infinite; display: none;
-  }
-  .btn-primary.loading .spinner { display: inline-block; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* Result */
-  .empty-state {
-    flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 16px; color: var(--muted); padding: 60px 0; font-size: .9rem;
-  }
-  .empty-icon { width: 64px; height: 64px; opacity: .4; }
-  .result-box { animation: fadeIn .4s ease; }
-  @keyframes fadeIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
-  .hidden { display: none !important; }
-
-  .result-status {
-    display: flex; align-items: center; gap: 14px;
-    padding: 18px; border-radius: 14px;
-    background: rgba(255,255,255,.03);
-    border: 1px solid var(--border);
-    margin-bottom: 22px; transition: all .3s ease;
-  }
-  .result-status.fraud {
-    background: rgba(255,77,109,.08);
-    border-color: rgba(255,77,109,.35);
-    box-shadow: 0 0 24px rgba(255,77,109,.15);
-  }
-  .result-status.genuine {
-    background: rgba(22,217,138,.08);
-    border-color: rgba(22,217,138,.35);
-    box-shadow: 0 0 24px rgba(22,217,138,.15);
-  }
-  .status-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: grid; place-items: center;
-    font-size: 1.4rem; font-weight: 800; flex-shrink: 0;
-  }
-  .result-status.fraud .status-icon { background: rgba(255,77,109,.15); color: var(--danger); }
-  .result-status.genuine .status-icon { background: rgba(22,217,138,.15); color: var(--success); }
-  .status-label { font-size: 1.1rem; font-weight: 700; }
-  .result-status.fraud .status-label { color: var(--danger); }
-  .result-status.genuine .status-label { color: var(--success); }
-  .status-sub { font-size: .78rem; color: var(--muted); margin-top: 2px; }
-
-  /* Gauge */
-  .gauge-wrap {
-    position: relative; display: flex;
-    justify-content: center; align-items: flex-end; margin: 6px 0 22px;
-  }
-  .gauge { width: 100%; max-width: 260px; }
-  .gauge-bg {
-    fill: none; stroke: rgba(120,140,200,.15);
-    stroke-width: 14; stroke-linecap: round;
-  }
-  .gauge-fill {
-    fill: none; stroke: var(--primary);
-    stroke-width: 14; stroke-linecap: round;
-    stroke-dasharray: 251; stroke-dashoffset: 251;
-    transition: stroke-dashoffset .9s cubic-bezier(.4,0,.2,1), stroke .4s ease;
-  }
-  .gauge-value {
-    position: absolute; bottom: 4px;
-    font-size: 1.9rem; font-weight: 800; letter-spacing: -.03em;
-  }
-
-  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
-  .metric {
-    padding: 14px; border-radius: 12px;
-    background: rgba(255,255,255,.03);
-    border: 1px solid var(--border);
-    display: flex; flex-direction: column; gap: 4px;
-  }
-  .metric-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-  .metric-value { font-size: .95rem; font-weight: 600; }
-
-  .advice {
-    padding: 14px 16px; border-radius: 12px;
-    font-size: .85rem; line-height: 1.5;
-    border-left: 3px solid var(--primary);
-    background: rgba(79,124,255,.06);
-    color: #c8d3f0;
-  }
-  .advice.danger { border-color: var(--danger); background: rgba(255,77,109,.06); }
-  .advice.success { border-color: var(--success); background: rgba(22,217,138,.06); }
-
-  .error-box {
-    padding: 14px 16px; border-radius: 12px;
-    background: rgba(255,77,109,.08);
-    border: 1px solid rgba(255,77,109,.3);
-    color: #ffb3c1; font-size: .85rem;
-  }
-
-  .footer {
-    text-align: center; padding: 22px;
-    font-size: .78rem; color: var(--muted);
-    border-top: 1px solid var(--border);
-  }
-
-  @media (max-width: 980px) {
-    .container { grid-template-columns: 1fr; padding: 24px 20px; }
-    .navbar { padding: 16px 20px; }
-    .logo-text span { display: none; }
-  }
-  @media (max-width: 560px) {
-    .grid { grid-template-columns: 1fr; }
-    .card { padding: 22px; }
-    .actions { flex-direction: column; }
-    .status-pill { display: none; }
-  }
+  .bar-fill { transition: width .7s cubic-bezier(.4,0,.2,1), background-color .3s ease; }
+  input:focus, select:focus { outline: none; }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
 </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
 
-<div class="bg-grid"></div>
-<div class="bg-glow glow-1"></div>
-<div class="bg-glow glow-2"></div>
-
-<header class="navbar">
-  <div class="logo">
-    <div class="logo-mark">
-      <svg viewBox="0 0 24 24" fill="none">
-        <path d="M12 2L4 5V11C4 16.55 7.41 21.74 12 23C16.59 21.74 20 16.55 20 11V5L12 2Z"
-              stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+<!-- HEADER -->
+<header class="bg-white border-b border-slate-200">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+        <i data-lucide="shield-check" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <h1 class="text-base font-semibold leading-tight">FraudShield</h1>
+        <p class="text-xs text-slate-500 leading-tight">Financial Fraud Detection</p>
+      </div>
     </div>
-    <div class="logo-text">
-      <h1>FraudShield</h1>
-      <span>Real-Time Transaction Intelligence</span>
+    <div class="flex items-center gap-2 text-sm text-slate-600">
+      <span class="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+      <span class="hidden sm:inline">System Online</span>
     </div>
   </div>
-  <div class="status-pill"><span class="dot"></span> Model Active · XGBoost</div>
 </header>
 
-<main class="container">
+<!-- MAIN -->
+<main class="flex-1">
+  <div class="max-w-7xl mx-auto px-6 py-10">
 
-  <!-- FORM -->
-  <section class="card">
-    <div class="card-header">
-      <h2>Transaction Details</h2>
-      <p>Enter transaction parameters to evaluate fraud risk</p>
+    <!-- HERO -->
+    <section class="mb-10">
+      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
+        Financial Fraud Detection
+      </h2>
+      <p class="mt-3 text-slate-600 max-w-2xl">
+        Review a transaction and assess its potential fraud risk using the trained machine-learning model.
+      </p>
+      <div class="mt-4 inline-flex items-center gap-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-full px-3 py-1.5">
+        <span class="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+        Detection system ready
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- LEFT: FORM -->
+      <section class="bg-white border border-slate-200 rounded-xl shadow-sm">
+        <div class="p-6 border-b border-slate-200">
+          <h3 class="text-lg font-semibold text-slate-900">Transaction Details</h3>
+          <p class="text-sm text-slate-500 mt-1">Enter the transaction parameters below.</p>
+        </div>
+
+        <form id="fraudForm" class="p-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+            <div>
+              <label for="Amount" class="block text-sm font-medium text-slate-700 mb-1.5">
+                Amount
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">₹</span>
+                <input type="number" step="0.01" min="0" id="Amount" name="Amount" required
+                       placeholder="0.00"
+                       class="w-full pl-7 pr-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition" />
+              </div>
+            </div>
+
+            <div>
+              <label for="Merchant_Category" class="block text-sm font-medium text-slate-700 mb-1.5">
+                Merchant Category
+              </label>
+              <select id="Merchant_Category" name="Merchant_Category" required
+                      class="w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition">
+                <option value="" disabled selected>Select category</option>
+                <option value="Groceries">Groceries</option>
+                <option value="Food_Dining">Food & Dining</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Luxury_Goods">Luxury Goods</option>
+                <option value="Transport">Transport</option>
+                <option value="Online_Services">Online Services</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="Distance_from_Home" class="block text-sm font-medium text-slate-700 mb-1.5">
+                Distance from Home
+              </label>
+              <input type="number" step="0.0001" min="0" id="Distance_from_Home" name="Distance_from_Home" required
+                     placeholder="0.0000"
+                     class="w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition" />
+              <p class="text-xs text-slate-500 mt-1.5">Distance in kilometers</p>
+            </div>
+
+            <div>
+              <label for="Device_Type" class="block text-sm font-medium text-slate-700 mb-1.5">
+                Device Type
+              </label>
+              <select id="Device_Type" name="Device_Type" required
+                      class="w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition">
+                <option value="" disabled selected>Select device</option>
+                <option value="Android">Android</option>
+                <option value="iOS">iOS</option>
+                <option value="Web_Browser">Web Browser</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="IP_Risk_Score" class="block text-sm font-medium text-slate-700 mb-1.5">
+                IP Risk Score
+              </label>
+              <input type="number" step="0.01" min="0" max="1" id="IP_Risk_Score" name="IP_Risk_Score" required
+                     placeholder="0.00"
+                     class="w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition" />
+            </div>
+
+            <div>
+              <label for="Avg_Spending_Habit" class="block text-sm font-medium text-slate-700 mb-1.5">
+                Average Spending Habit
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">₹</span>
+                <input type="number" step="0.01" min="0" id="Avg_Spending_Habit" name="Avg_Spending_Habit" required
+                       placeholder="0.00"
+                       class="w-full pl-7 pr-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition" />
+              </div>
+            </div>
+
+            <div>
+              <label for="Is_Weekend" class="block text-sm font-medium text-slate-700 mb-1.5">
+                Weekend Transaction
+              </label>
+              <select id="Is_Weekend" name="Is_Weekend" required
+                      class="w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="Is_Night_Transaction" class="block text-sm font-medium text-slate-700 mb-1.5">
+                Night Transaction
+              </label>
+              <select id="Is_Night_Transaction" name="Is_Night_Transaction" required
+                      class="w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div class="mt-8 flex flex-col sm:flex-row gap-3">
+            <button type="submit" id="submitBtn"
+                    class="flex-1 inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
+              <svg id="spinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
+              <span id="submitText">Check Transaction</span>
+            </button>
+            <button type="reset" id="resetBtn"
+                    class="inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-sm font-medium py-2.5 px-5 rounded-lg transition">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              Reset
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- RIGHT: RESULT -->
+      <section class="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col">
+        <div class="p-6 border-b border-slate-200">
+          <h3 class="text-lg font-semibold text-slate-900">Transaction Assessment</h3>
+          <p class="text-sm text-slate-500 mt-1">Prediction results from the trained model.</p>
+        </div>
+
+        <div class="p-6 flex-1 flex flex-col">
+
+          <!-- Empty State -->
+          <div id="emptyState" class="flex-1 flex flex-col items-center justify-center text-center py-10">
+            <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+              <i data-lucide="shield" class="w-6 h-6 text-slate-400"></i>
+            </div>
+            <p class="text-base font-medium text-slate-700">Ready for assessment</p>
+            <p class="text-sm text-slate-500 mt-1 max-w-xs">
+              Submit the transaction details to view the model's prediction.
+            </p>
+          </div>
+
+          <!-- Result -->
+          <div id="resultBox" class="hidden fade-in">
+
+            <!-- Status Banner -->
+            <div id="statusBanner" class="rounded-lg border p-4 flex items-start gap-3 mb-6">
+              <div id="statusIconWrap" class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0">
+                <i id="statusIcon" data-lucide="check" class="w-5 h-5"></i>
+              </div>
+              <div class="flex-1">
+                <p id="statusTitle" class="text-sm font-semibold">—</p>
+                <p id="statusMessage" class="text-xs mt-0.5">—</p>
+              </div>
+            </div>
+
+            <!-- Probability Bar -->
+            <div class="mb-6">
+              <div class="flex items-baseline justify-between mb-2">
+                <span class="text-sm font-medium text-slate-700">Fraud probability</span>
+                <span id="probValue" class="text-xl font-semibold tabular-nums">0.00%</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div id="probBar" class="bar-fill h-full bg-blue-600 rounded-full" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- Details -->
+            <div class="grid grid-cols-3 gap-3 mb-6">
+              <div class="bg-slate-50 rounded-lg px-3 py-3">
+                <p class="text-xs text-slate-500 mb-0.5">Decision</p>
+                <p id="decisionText" class="text-sm font-semibold">—</p>
+              </div>
+              <div class="bg-slate-50 rounded-lg px-3 py-3">
+                <p class="text-xs text-slate-500 mb-0.5">Confidence</p>
+                <p id="confidenceText" class="text-sm font-semibold tabular-nums">—</p>
+              </div>
+              <div class="bg-slate-50 rounded-lg px-3 py-3">
+                <p class="text-xs text-slate-500 mb-0.5">Checked</p>
+                <p id="checkedText" class="text-sm font-semibold tabular-nums">—</p>
+              </div>
+            </div>
+
+            <!-- Assessment -->
+            <div class="mb-6">
+              <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Assessment</p>
+              <p id="assessmentText" class="text-sm text-slate-700 leading-relaxed">—</p>
+            </div>
+
+            <!-- Transaction Summary -->
+            <div class="border-t border-slate-200 pt-5">
+              <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Transaction Summary</p>
+              <dl id="summaryList" class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm"></dl>
+            </div>
+
+          </div>
+
+          <!-- Error -->
+          <div id="errorBox" class="hidden fade-in rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"></i>
+            <div>
+              <p class="text-sm font-medium text-red-800">Unable to process request</p>
+              <p id="errorText" class="text-xs text-red-700 mt-0.5">—</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
     </div>
 
-    <form id="fraudForm">
-      <div class="grid">
-        <div class="field">
-          <label>Transaction Amount ($)</label>
-          <input type="number" step="0.01" min="0" name="Amount" placeholder="e.g. 1985.97" required />
+    <!-- DETECTION METHOD -->
+    <section class="mt-10 bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+      <h3 class="text-base font-semibold text-slate-900 mb-4">Detection Method</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+        <div class="border-l-2 border-blue-600 pl-3">
+          <p class="text-slate-500 text-xs uppercase tracking-wider mb-1">Preprocessing</p>
+          <p class="text-slate-800">MinMax Scaling + One-Hot Encoding</p>
         </div>
-
-        <div class="field">
-          <label>Merchant Category</label>
-          <select name="Merchant_Category" required>
-            <option value="Groceries">Groceries</option>
-            <option value="Food_Dining">Food Dining</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Luxury_Goods">Luxury Goods</option>
-            <option value="Transport">Transport</option>
-            <option value="Online_Services">Online Services</option>
-          </select>
+        <div class="border-l-2 border-blue-600 pl-3">
+          <p class="text-slate-500 text-xs uppercase tracking-wider mb-1">Class Balancing</p>
+          <p class="text-slate-800">SMOTE</p>
         </div>
-
-        <div class="field">
-          <label>Distance From Home (km)</label>
-          <input type="number" step="0.0001" min="0" name="Distance_from_Home" placeholder="e.g. 0.0123" required />
+        <div class="border-l-2 border-blue-600 pl-3">
+          <p class="text-slate-500 text-xs uppercase tracking-wider mb-1">Validation</p>
+          <p class="text-slate-800">5-Fold Stratified Cross-Validation</p>
         </div>
-
-        <div class="field">
-          <label>Device Type</label>
-          <select name="Device_Type" required>
-            <option value="Android">Android</option>
-            <option value="iOS">iOS</option>
-            <option value="Web_Browser">Web Browser</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label>IP Risk Score <small>(0 – 1)</small></label>
-          <input type="number" step="0.01" min="0" max="1" name="IP_Risk_Score" placeholder="e.g. 0.89" required />
-        </div>
-
-        <div class="field">
-          <label>Avg Spending Habit ($)</label>
-          <input type="number" step="0.01" min="0" name="Avg_Spending_Habit" placeholder="e.g. 94.75" required />
-        </div>
-
-        <div class="field">
-          <label>Weekend Transaction?</label>
-          <select name="Is_Weekend" required>
-            <option value="0">No</option>
-            <option value="1">Yes</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label>Night Transaction?</label>
-          <select name="Is_Night_Transaction" required>
-            <option value="0">No</option>
-            <option value="1">Yes</option>
-          </select>
+        <div class="border-l-2 border-blue-600 pl-3">
+          <p class="text-slate-500 text-xs uppercase tracking-wider mb-1">Pipeline</p>
+          <p class="text-slate-800">Machine Learning Pipeline</p>
         </div>
       </div>
+    </section>
 
-      <div class="actions">
-        <button type="submit" class="btn-primary" id="submitBtn">
-          <span class="spinner"></span>
-          <span>Analyze Transaction</span>
-        </button>
-        <button type="reset" class="btn-ghost">Reset</button>
-      </div>
-    </form>
-  </section>
-
-  <!-- RESULT -->
-  <aside class="card">
-    <div class="card-header">
-      <h2>Prediction Result</h2>
-      <p>AI-generated risk assessment</p>
-    </div>
-
-    <div id="emptyState" class="empty-state">
-      <div class="empty-icon">
-        <svg viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M12 8V12L14.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <p>Awaiting transaction data…</p>
-    </div>
-
-    <div id="resultBox" class="result-box hidden">
-      <div class="result-status" id="resultStatus">
-        <div class="status-icon" id="statusIcon"></div>
-        <div>
-          <div class="status-label" id="statusLabel">—</div>
-          <div class="status-sub">Fraud probability</div>
-        </div>
-      </div>
-
-      <div class="gauge-wrap">
-        <svg viewBox="0 0 200 120" class="gauge">
-          <path class="gauge-bg" d="M20 110 A80 80 0 0 1 180 110" />
-          <path class="gauge-fill" id="gaugeFill" d="M20 110 A80 80 0 0 1 180 110" />
-        </svg>
-        <div class="gauge-value" id="gaugeValue">0%</div>
-      </div>
-
-      <div class="metrics">
-        <div class="metric">
-          <span class="metric-label">Decision</span>
-          <span class="metric-value" id="decisionText">—</span>
-        </div>
-        <div class="metric">
-          <span class="metric-label">Confidence</span>
-          <span class="metric-value" id="confidenceText">—</span>
-        </div>
-      </div>
-
-      <div class="advice" id="adviceBox"></div>
-    </div>
-
-    <div id="errorBox" class="error-box hidden"></div>
-  </aside>
-
+  </div>
 </main>
 
-<footer class="footer">
-  <p>FraudShield · Powered by XGBoost · 99.60% Accuracy · 0.9993 PR-AUC</p>
+<!-- FOOTER -->
+<footer class="border-t border-slate-200 bg-white">
+  <div class="max-w-7xl mx-auto px-6 py-5 text-sm text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+    <p>© FraudShield · Financial Fraud Detection</p>
+    <p class="text-xs">Model predictions are provided for reference only.</p>
+  </div>
 </footer>
 
 <script>
+  lucide.createIcons();
+
   const form = document.getElementById("fraudForm");
   const submitBtn = document.getElementById("submitBtn");
+  const spinner = document.getElementById("spinner");
+  const submitText = document.getElementById("submitText");
+  const resetBtn = document.getElementById("resetBtn");
+
   const emptyState = document.getElementById("emptyState");
   const resultBox = document.getElementById("resultBox");
   const errorBox = document.getElementById("errorBox");
+  const errorText = document.getElementById("errorText");
 
-  const resultStatus = document.getElementById("resultStatus");
-  const statusIcon = document.getElementById("statusIcon");
-  const statusLabel = document.getElementById("statusLabel");
-  const gaugeFill = document.getElementById("gaugeFill");
-  const gaugeValue = document.getElementById("gaugeValue");
+  const statusBanner = document.getElementById("statusBanner");
+  const statusIconWrap = document.getElementById("statusIconWrap");
+  const statusTitle = document.getElementById("statusTitle");
+  const statusMessage = document.getElementById("statusMessage");
+
+  const probValue = document.getElementById("probValue");
+  const probBar = document.getElementById("probBar");
   const decisionText = document.getElementById("decisionText");
   const confidenceText = document.getElementById("confidenceText");
-  const adviceBox = document.getElementById("adviceBox");
-
-  const GAUGE_LENGTH = 251;
+  const checkedText = document.getElementById("checkedText");
+  const assessmentText = document.getElementById("assessmentText");
+  const summaryList = document.getElementById("summaryList");
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    submitBtn.classList.add("loading");
+
     submitBtn.disabled = true;
+    spinner.classList.remove("hidden");
+    submitText.textContent = "Checking…";
     errorBox.classList.add("hidden");
 
-    const payload = Object.fromEntries(new FormData(form).entries());
+    const fd = new FormData(form);
+    const payload = Object.fromEntries(fd.entries());
 
     try {
       const res = await fetch("/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
+
       const data = await res.json();
+
       if (!data.success) throw new Error(data.error || "Prediction failed");
-      renderResult(data);
+
+      renderResult(data, payload);
     } catch (err) {
       showError(err.message);
     } finally {
-      submitBtn.classList.remove("loading");
       submitBtn.disabled = false;
+      spinner.classList.add("hidden");
+      submitText.textContent = "Check Transaction";
     }
   });
 
-  function renderResult(data) {
-    emptyState.classList.add("hidden");
-    resultBox.classList.remove("hidden");
+  resetBtn.addEventListener("click", () => {
+    resultBox.classList.add("hidden");
     errorBox.classList.add("hidden");
+    emptyState.classList.remove("hidden");
+  });
 
-    const prob = data.probability;
-    const pct = (prob * 100).toFixed(2);
+  function renderResult(data, payload) {
+    emptyState.classList.add("hidden");
+    errorBox.classList.add("hidden");
+    resultBox.classList.remove("hidden");
+
     const isFraud = data.prediction === 1;
+    const prob = Number(data.probability) || 0;
+    const pct = (prob * 100).toFixed(2);
 
-    resultStatus.classList.remove("fraud", "genuine");
-    resultStatus.classList.add(isFraud ? "fraud" : "genuine");
-    statusIcon.textContent = isFraud ? "!" : "✓";
-    statusLabel.textContent = isFraud ? "FRAUD DETECTED" : "GENUINE TRANSACTION";
+    // Status banner
+    statusBanner.classList.remove(
+      "bg-green-50", "border-green-200",
+      "bg-red-50", "border-red-200"
+    );
+    statusIconWrap.classList.remove(
+      "bg-green-100", "text-green-600",
+      "bg-red-100", "text-red-600"
+    );
 
-    const offset = GAUGE_LENGTH - GAUGE_LENGTH * prob;
-    gaugeFill.style.strokeDashoffset = offset;
-    gaugeFill.style.stroke = isFraud ? "#ff4d6d" : "#16d98a";
-    gaugeValue.textContent = pct + "%";
-    gaugeValue.style.color = isFraud ? "#ff4d6d" : "#16d98a";
-
-    decisionText.textContent = isFraud ? "Block / Flag" : "Approve";
-    decisionText.style.color = isFraud ? "#ff4d6d" : "#16d98a";
-    confidenceText.textContent = pct + "%";
-
-    adviceBox.classList.remove("danger", "success");
     if (isFraud) {
-      adviceBox.classList.add("danger");
-      adviceBox.innerHTML =
-        "<strong>Recommended action:</strong> Block this transaction and trigger manual review. Risk patterns match known fraudulent behaviour.";
+      statusBanner.classList.add("bg-red-50", "border-red-200");
+      statusIconWrap.classList.add("bg-red-100", "text-red-600");
+      statusTitle.textContent = "Fraud Transaction";
+      statusTitle.className = "text-sm font-semibold text-red-800";
+      statusMessage.textContent = "This transaction has been flagged as potentially fraudulent.";
+      statusMessage.className = "text-xs mt-0.5 text-red-700";
     } else {
-      adviceBox.classList.add("success");
-      adviceBox.innerHTML =
-        "<strong>Recommended action:</strong> Transaction appears legitimate. You may proceed with normal processing.";
+      statusBanner.classList.add("bg-green-50", "border-green-200");
+      statusIconWrap.classList.add("bg-green-100", "text-green-600");
+      statusTitle.textContent = "Genuine Transaction";
+      statusTitle.className = "text-sm font-semibold text-green-800";
+      statusMessage.textContent = "Transaction appears low risk based on the submitted transaction details.";
+      statusMessage.className = "text-xs mt-0.5 text-green-700";
     }
+
+    // Re-render lucide icon
+    statusIconWrap.innerHTML = `<i data-lucide="${isFraud ? "alert-triangle" : "check"}" class="w-5 h-5"></i>`;
+    lucide.createIcons();
+
+    // Probability bar
+    probValue.textContent = pct + "%";
+    probValue.style.color = isFraud ? "#dc2626" : "#16a34a";
+    probBar.style.background = isFraud ? "#dc2626" : "#16a34a";
+    probBar.style.width = "0%";
+    requestAnimationFrame(() => {
+      setTimeout(() => { probBar.style.width = Math.min(100, prob * 100) + "%"; }, 30);
+    });
+
+    // Details
+    decisionText.textContent = isFraud ? "Flag" : "Approve";
+    decisionText.style.color = isFraud ? "#dc2626" : "#16a34a";
+    confidenceText.textContent = pct + "%";
+    checkedText.textContent = new Date().toLocaleTimeString("en-GB", {
+      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+
+    // Assessment
+    assessmentText.textContent = isFraud
+      ? "The submitted transaction was classified as potentially fraudulent by the trained model."
+      : "The submitted transaction was classified as genuine by the trained model.";
+
+    // Summary
+    const fmtMoney = (v) => "₹" + Number(v).toLocaleString("en-IN", {
+      minimumFractionDigits: 2, maximumFractionDigits: 2
+    });
+    const fmtCat = (v) => String(v).replace(/_/g, " ");
+
+    const rows = [
+      ["Amount", fmtMoney(payload.Amount)],
+      ["Merchant", fmtCat(payload.Merchant_Category)],
+      ["Device", fmtCat(payload.Device_Type)],
+      ["Distance", Number(payload.Distance_from_Home).toLocaleString() + " km"],
+      ["IP Risk", Number(payload.IP_Risk_Score).toFixed(2)],
+      ["Spending Habit", fmtMoney(payload.Avg_Spending_Habit)],
+      ["Weekend", payload.Is_Weekend === "1" ? "Yes" : "No"],
+      ["Night", payload.Is_Night_Transaction === "1" ? "Yes" : "No"],
+    ];
+
+    summaryList.innerHTML = rows.map(([k, v]) => `
+      <div class="flex justify-between gap-2 border-b border-slate-100 pb-2">
+        <dt class="text-slate-500">${k}</dt>
+        <dd class="text-slate-800 font-medium text-right">${v}</dd>
+      </div>
+    `).join("");
   }
 
   function showError(message) {
     emptyState.classList.add("hidden");
     resultBox.classList.add("hidden");
     errorBox.classList.remove("hidden");
-    errorBox.textContent = "⚠ " + message;
+    errorText.textContent = message;
+    lucide.createIcons();
   }
 </script>
 
