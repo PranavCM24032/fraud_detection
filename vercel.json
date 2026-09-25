@@ -4,7 +4,8 @@
   "functions": {
     "app.py": {
       "maxDuration": 60,
-      "includeFiles": "{index.html,final_fraud_detection_model.pkl}"
+      "includeFiles": "{index.html,model_config.json,final_fraud_detection_model.json}",
+      "excludeFiles": "{final_fraud_detection_model.pkl,finance_fraud_data.csv,FML_TAE_CM24032.ipynb}"
     }
   }
 }

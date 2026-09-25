@@ -1,0 +1,47 @@
+{
+  "numeric_features": [
+    "Amount",
+    "Distance_from_Home",
+    "IP_Risk_Score",
+    "Avg_Spending_Habit",
+    "Is_Weekend",
+    "Is_Night_Transaction"
+  ],
+  "numeric_min": [
+    2.9,
+    0.0123,
+    0.0,
+    -36.68,
+    0.0,
+    0.0
+  ],
+  "numeric_max": [
+    7987.24,
+    4.8088,
+    1.0,
+    200.55,
+    1.0,
+    1.0
+  ],
+  "numeric_scale": [
+    0.00012524516741521527,
+    0.20848535390388825,
+    1.0,
+    0.004215318467310205,
+    1.0,
+    1.0
+  ],
+  "merchant_categories": [
+    "Electronics",
+    "Food_Dining",
+    "Groceries",
+    "Luxury_Goods",
+    "Online_Services",
+    "Transport"
+  ],
+  "device_categories": [
+    "Android",
+    "Web_Browser",
+    "iOS"
+  ]
+}

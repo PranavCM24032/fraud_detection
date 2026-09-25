@@ -1,42 +1,57 @@
-from flask import Flask, request, jsonify, send_file
-import joblib
-import pandas as pd
-from pathlib import Path
+import json
 import os
+from pathlib import Path
+
+import numpy as np
+import xgboost as xgb
+from flask import Flask, jsonify, request, send_file
 
 app = Flask(__name__)
 BASE_DIR = Path(__file__).resolve().parent
-model = joblib.load(BASE_DIR / "final_fraud_detection_model.pkl")
+
+with (BASE_DIR / "model_config.json").open(encoding="utf-8") as config_file:
+    model_config = json.load(config_file)
+
+model = xgb.Booster()
+model.load_model(str(BASE_DIR / "final_fraud_detection_model.json"))
+
+numeric_features = model_config["numeric_features"]
+numeric_min = np.asarray(model_config["numeric_min"], dtype=np.float64)
+numeric_scale = np.asarray(model_config["numeric_scale"], dtype=np.float64)
+merchant_categories = model_config["merchant_categories"]
+device_categories = model_config["device_categories"]
+
+
+def build_features(data):
+    numeric = np.asarray([float(data[name]) for name in numeric_features], dtype=np.float64)
+    numeric = (numeric - numeric_min) * numeric_scale
+    merchant = [float(data["Merchant_Category"] == category) for category in merchant_categories]
+    device = [float(data["Device_Type"] == category) for category in device_categories]
+    return np.concatenate((numeric, np.asarray(merchant + device, dtype=np.float64))).astype(np.float32).reshape(1, -1)
+
 
 @app.route("/")
 def home():
     return send_file(BASE_DIR / "index.html")
 
+
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
-        d = request.get_json(silent=True) or {}
-        X = pd.DataFrame([{
-            "Amount": float(d["Amount"]),
-            "Merchant_Category": d["Merchant_Category"],
-            "Distance_from_Home": float(d["Distance_from_Home"]),
-            "Device_Type": d["Device_Type"],
-            "IP_Risk_Score": float(d["IP_Risk_Score"]),
-            "Avg_Spending_Habit": float(d["Avg_Spending_Habit"]),
-            "Is_Weekend": int(d["Is_Weekend"]),
-            "Is_Night_Transaction": int(d["Is_Night_Transaction"]),
-        }])
+        data = request.get_json(silent=True) or {}
+        features = build_features(data)
     except (KeyError, TypeError, ValueError):
         return jsonify({"success": False, "error": "Invalid or incomplete transaction data."}), 400
 
-    pred = int(model.predict(X)[0])
-    prob = float(model.predict_proba(X)[0][1])
+    probability = float(model.predict(xgb.DMatrix(features))[0])
+    prediction = int(probability >= 0.5)
     return jsonify({
         "success": True,
-        "prediction": pred,
-        "probability": prob,
-        "label": "FRAUD" if pred == 1 else "GENUINE"
+        "prediction": prediction,
+        "probability": probability,
+        "label": "FRAUD" if prediction == 1 else "GENUINE"
     })
+
 
 if __name__ == "__main__":
     debug = os.getenv("FLASK_DEBUG", "0") == "1"
